@@ -5,12 +5,29 @@ import ReactPlayer from 'react-player';
 
 // const av_folder = "E:\\crawVideos\\torrent\\av"
 const video_list = [
-    "4LAKG6HsL0FfGdZl.mp4",
-    "6m3VKUQZRLVERvdd.mp4",
-    "34opvBMeeeDLvLsY.mp4", "4LAKG6HsL0FfGdZl.mp4", "6m3VKUQZRLVERvdd.mp4", "7llLPtoAEUBCG02g.mp4",
-    "fG7sYEhhiMQIt0WR.mp4", "hYTkrQH5EpJfWGuv.mp4", "Krq7P_3gKlxjRA2r.mp4", "LtmIWHVlhYAe9KW2.mp4",
-    "onwoG8BMif_DVt5L.mp4", "szjwR50UGuNz9Qpz.mp4", "TUUixQIrukb6_Jsy.mp4", "UWOM-4hyHAlo1YNK.mp4",
-    "Uz6aMev7HeqWPwWl.mp4"]
+    "34opvBMeeeDLvLsY.mp4",
+"4LAKG6HsL0FfGdZl.mp4",
+"6m3VKUQZRLVERvdd.mp4",
+"7llLPtoAEUBCG02g.mp4",
+"DmFvsuv-3TdhjntK.mp4",
+"fG7sYEhhiMQIt0WR.mp4",
+"GO3930BT5AJ5Vsbv.mp4",
+"HUvW9mW7gX_XO92J.mp4",
+"hYTkrQH5EpJfWGuv.mp4",
+"Krq7P_3gKlxjRA2r.mp4",
+"lnduYuqkKzSe3mjc.mp4",
+"LtmIWHVlhYAe9KW2.mp4",
+"onwoG8BMif_DVt5L.mp4",
+"szjwR50UGuNz9Qpz.mp4",
+"TUUixQIrukb6_Jsy.mp4",
+"UWOM-4hyHAlo1YNK.mp4",
+"UWwXihksyBHGUx-F.mp4",
+"Uz6aMev7HeqWPwWl.mp4",
+"_YZ6BCZxgy3Pc5wK.mp4",
+"rKCKXFSZqOR81vys.mp4",
+"cE3s20VgnqXeX_C4.mp4"]
+
+
 
 export default function VideoComponent () {
     const [showPlayer, setShowPlayer] = React.useState(false)

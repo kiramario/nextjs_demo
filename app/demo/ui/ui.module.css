@@ -1,0 +1,26 @@
+/* 设置默认的checkbox样式 */
+input.check_input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none; /* 移除默认样式 */
+    border: 1px solid #A9A9A9;
+    outline: none;
+    background: #FFF; 
+}
+
+/* 设置选中状态下的checkbox样式 */
+input.check_input[type="checkbox"]:checked {
+    /* background-color: red; */
+    border: 0
+}
+
+/* 显示对勾 */
+input.check_input[type="checkbox"]:checked::after {
+    content: "";
+    display: block;
+    width: 15px;
+    height: 15px;
+    background-image: url('/checked_svg.svg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
