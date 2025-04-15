@@ -10,6 +10,7 @@ export default function MicroPhoneAndSpeaker() {
     const mediaRecorder: React.Ref<MediaRecorder | undefined> = React.useRef(undefined)
     const audiochunks: React.Ref<Blob[]> = React.useRef([] as Blob[])
     const audioeRef: React.Ref<HTMLAudioElement> = React.useRef({} as HTMLAudioElement)
+    const download_ref: React.Ref<HTMLAnchorElement> | undefined = React.useRef(null)
 
     const filter_vdi = () => devices.filter((dinfo) => dinfo.kind == "videoinput")
 
@@ -49,6 +50,12 @@ export default function MicroPhoneAndSpeaker() {
             video: false
         });
 
+        // var options = {
+        //     audioBitsPerSecond : 128000,
+        //     mimeType : 'audio/ogg'
+        // }
+        // mediaRecorder.current = new MediaRecorder(audioStream, options);
+
         mediaRecorder.current = new MediaRecorder(audioStream);
         mediaRecorder.current.start()
 
@@ -67,17 +74,30 @@ export default function MicroPhoneAndSpeaker() {
             setRecordState(mediaRecorder.current!.state)
             // console.log(`stop audiochunks len = ${audiochunks.current!.length}`)
 
-            const blob = new Blob(audiochunks.current!, { type: "audio/ogg; codecs=opus" });
+
+            // const blob_type = { type: "audio/ogg; codecs=opus" }
+            const blob_type = {type: 'audio/mpeg-3; codecs=MPEG-1 Audio Layer III' }
+            const blob = new Blob(audiochunks.current!, blob_type);
             const audioURL = window.URL.createObjectURL(blob);
 
-            await audioeRef.current!.setSinkId("2af8392e7d726a5b29a6ea38de5903a944f40ac767969ce5192b096b0caf0089");
+            // await audioeRef.current!.setSinkId("2af8392e7d726a5b29a6ea38de5903a944f40ac767969ce5192b096b0caf0089"); //  输出设备
             audioeRef.current!.src = audioURL;
+
+            if (download_ref.current) {
+                download_ref.current.href = audioURL
+            }
+
+
             audioeRef.current!.play()
         }; 
     }
 
     const start_play = async () => {
         mediaRecorder.current!.stop()
+    }
+
+    const download_play = async () => {
+
     }
 
     return (
@@ -112,11 +132,12 @@ export default function MicroPhoneAndSpeaker() {
             <p className="mt-20">
                 <input className="border border-1 border-gray-400 px-2 py-2" onChange={mpInpOnchange} type='text' value={mpId}/>
                 <span>{recordState}</span>
+
                 <audio ref={audioeRef} className="ml-10 w-[400px] h-[50px] border border-1"></audio>
             </p>
             <button onClick = {start_click} className="cursor-pointer bg-blue-200 px-5 py-2">start record audio</button>
-            <button onClick = {start_play} className="cursor-pointer bg-blue-400 px-5 py-2">stop and play and download audio</button>
-
+            <button onClick = {start_play} className="cursor-pointer bg-blue-400 px-5 py-2">stop and play</button>
+            <a href="#" ref={download_ref} className="cursor-pointer bg-blue-600 px-5 py-2 text-[#fff]" download="media_stream_audio.mp3">download audio</a>
         </div>
     )
 }

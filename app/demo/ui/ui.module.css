@@ -19,7 +19,7 @@ input.check_input[type="checkbox"]:checked::after {
     display: block;
     width: 15px;
     height: 15px;
-    background-image: url('/checked_svg.svg');
+    background-image: url('/images/checked_svg.svg');
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
