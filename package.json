@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^3.16.0",
     "@daily-co/daily-js": "^0.75.2",
+    "@emotion/react": "^11.14.0",
     "@livekit/components-react": "^2.8.1",
     "@livekit/components-styles": "^1.1.4",
     "firebase": "^11.6.0",

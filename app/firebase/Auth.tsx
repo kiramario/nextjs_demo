@@ -8,7 +8,8 @@ import { getAnalytics } from "firebase/analytics";
 // https://firebase.google.com/docs/web/setup#available-libraries
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
     validatePassword, onAuthStateChanged, updateProfile, updateEmail, sendEmailVerification,
-    updatePassword, sendPasswordResetEmail, deleteUser, reauthenticateWithCredential, EmailAuthProvider   } from "firebase/auth";
+    updatePassword, sendPasswordResetEmail, deleteUser, reauthenticateWithCredential, EmailAuthProvider, GoogleAuthProvider, 
+    signInWithRedirect, getRedirectResult, signInWithPopup, sendSignInLinkToEmail  } from "firebase/auth";
 
 import { FirebaseApp } from '@firebase/app';
 import { Auth, User } from '@firebase/auth';
@@ -30,13 +31,13 @@ export default function AuthDemo() {
     // Your web app's Firebase configuration
     // For Firebase JS SDK v7.20.0 and later, measurementId is optional
     const firebaseConfig = {
-        apiKey: "AIzaSyAnSfRa6KjggUD0BHGMo_aHAOjMXArVR6M",
-        authDomain: "fir-fe63d.firebaseapp.com",
-        projectId: "fir-fe63d",
-        storageBucket: "fir-fe63d.firebasestorage.app",
-        messagingSenderId: "703845645457",
-        appId: "1:703845645457:web:826df5de98c7a33cf05330",
-        measurementId: "G-VL5RP3KKNB"
+        apiKey: process.env.FIREBASE_APIKEY,
+        authDomain: "127.0.0.1",
+        projectId: process.env.FIREBASE_PROJECTID,
+        storageBucket: process.env.FIREBASE_STORAGEBUCKET,
+        messagingSenderId: process.env.FIREBASE_MESSAGINGSENDERID,
+        appId: process.env.FIREBASE_APPID,
+        measurementId: process.env.FIREBASE_MEASUREMENTID
     };
 
     const display_user_info = (user: User) => {
@@ -44,7 +45,6 @@ export default function AuthDemo() {
 
         console.log("userJson: ")
         console.table(userJson)
-
 
         const displayName = user.displayName;
         const email = user.email;
@@ -227,6 +227,125 @@ export default function AuthDemo() {
         }
     }
 
+    const googleLogin = () => {
+        alert("googleLogin")
+        if (auth.current) {
+            app = initializeApp(firebaseConfig);
+            const provider = new GoogleAuthProvider();
+            signInWithRedirect(auth.current, provider);
+        } else {
+            alert("auth not exit")
+        }
+    }
+
+    const googleLoginPop = () => {
+        alert("googleLoginPop")
+        if (auth.current) {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth.current, provider)
+                .then((result) => {
+                    console.log(result)
+                    // This gives you a Google Access Token. You can use it to access the Google API.
+                    const credential = GoogleAuthProvider.credentialFromResult(result);
+                    const token = credential.accessToken;
+                    // The signed-in user info.
+                    const user = result.user;
+                    // IdP data available using getAdditionalUserInfo(result)
+                    // ...
+            }).catch((error) => {
+                // Handle Errors here.
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                // The email of the user's account used.
+                const email = error.customData.email;
+                // The AuthCredential type that was used.
+                const credential = GoogleAuthProvider.credentialFromError(error);
+                // ...
+            });
+        } else {
+            alert("auth not exit")
+        }
+    }
+
+    // failed 是不是因为第三方阻止储存的原因？
+    const googleSignInRedirectResult = () => {
+        if (auth.current) {
+            // [START auth_google_signin_redirect_result]
+            getRedirectResult(auth.current)
+            .then((result) => {
+                console.log(result)
+                if (result) {
+                    if (result.credential) {
+                        /** @type {firebase.auth.OAuthCredential} */
+                        var credential = result.credential;
+    
+                        // This gives you a Google Access Token. You can use it to access the Google API.
+                        var token = credential.accessToken;
+                        // ...
+                    }
+
+                    // The signed-in user info.
+                    var user = result.user;
+                    // IdP data available in result.additionalUserInfo.profile.
+                        // ...
+                }
+            }).catch((error) => {
+                console.log(error)
+                // Handle Errors here.
+                var errorCode = error.code;
+                var errorMessage = error.message;
+                // The email of the user's account used.
+                var email = error.email;
+                // The firebase.auth.AuthCredential type that was used.
+                var credential = error.credential;
+                // ...
+            });
+            // [END auth_google_signin_redirect_result]
+        } else {
+            alert("auth not exit")
+        }
+    }
+
+    // firebaseConfig的authDomain也要指定为217.0.0.1
+    const email_signIn_verify = () => {
+        alert("email_signIn_verify")
+        const email = "zhangyangFBI@126.com"
+        const actionCodeSettings = {
+            // URL you want to redirect back to. The domain (www.example.com) for this
+            // URL must be in the authorized domains list in the Firebase Console.
+            url: 'http://127.0.0.1:3001/firebase/auth?act=123',
+            // This must be true.
+            handleCodeInApp: true,
+            // iOS: {
+            //     bundleId: 'com.example.ios'
+            // },
+            // android: {
+            //     packageName: 'com.example.android',
+            //     installApp: true,
+            //     minimumVersion: '12'
+            // },
+            // The domain must be configured in Firebase Hosting and owned by the project.
+            // linkDomain: '127.0.0.1'
+        };
+
+        if (auth.current){
+            sendSignInLinkToEmail(auth.current, email, actionCodeSettings)
+            .then(() => {
+                // The link was successfully sent. Inform the user.
+                // Save the email locally so you don't need to ask the user for it again
+                // if they open the link on the same device.
+                window.localStorage.setItem('emailForSignIn', email);
+                // ...
+            })
+            .catch((error) => {
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                // ...
+            });
+        }
+        
+    }
+
     React.useEffect(() => {
         
         // Initialize Firebase
@@ -244,6 +363,7 @@ export default function AuthDemo() {
             }
         });
 
+        googleSignInRedirectResult()
 
         return () => {
 
@@ -252,53 +372,66 @@ export default function AuthDemo() {
 
     return (
         <>
-            <div className="flex justify-between w-full px-10 py-10">
-                <span onClick={signUp} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+            <div className="flex justify-between flex-wrap w-full px-10 py-10">
+                <span onClick={signUp} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     signUp
                 </span>
 
-                <span onClick={signIn} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={signIn} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     signIn
                 </span>
 
-                <span onClick={signOut} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={signOut} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     signOut
                 </span>
                 
 
-                <span onClick={upateUserInfo} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={upateUserInfo} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     upateUserInfo
                 </span>
                 
-                <span onClick={updateUserEmail} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={updateUserEmail} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     updateUserEmail
                 </span>
 
 
-                <span onClick={verifyEmail} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={verifyEmail} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     verifyEmail
                 </span>
 
 
-                <span onClick={refreshPwd} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={refreshPwd} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     refreshPwd
                 </span>
                 
-                <span onClick={sendEmailAndRefreshPwd} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={sendEmailAndRefreshPwd} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     sendEmailAndRefreshPwd
                 </span>
 
-                <span onClick={removeUser} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={removeUser} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     removeUser
                 </span>
                 
-                <span onClick={reCredential} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={reCredential} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     reCredential
                 </span>
                 
-                <span onClick={showCurrentUserState} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px] select-none">
+                <span onClick={showCurrentUserState} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     showUserState
                 </span>
+
+                <span onClick={googleLogin} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
+                    googleLogin
+                </span>
+
+                <span onClick={googleLoginPop} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
+                    googleLoginPop
+                </span>
+
+                <span onClick={email_signIn_verify} className="cursor-pointer block float-right bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
+                    email_signIn_verify
+                </span>
+                
                 
             </div>
         </>

@@ -12,16 +12,21 @@ import styles from "@/app/demo/ui/ui.module.css"
 import { PiSuitcase } from "react-icons/pi";
 import { AIMockInterviewIcon, ChangeJobReferenceSvg, AddrLocationSvg, InternishpIcon, 
     RemoteIcon, YearsExpIcon, KyrIcon, MidLevelIcon, MaxInterSucIcon, CalendarIcon, UpperbodyIcon,
-    WorldBallIcon, CompanyXIcon, CompanyInIcon
+    WorldBallIcon, CompanyXIcon, CompanyInIcon, RightIcon
  } from "@/_components/ui/jobnova_svg"
 import { IoEye } from "react-icons/io5";
 import { RiLogoutBoxRLine } from "react-icons/ri";
 import { GoArrowLeft } from "react-icons/go";
 import { BsArrowUpRight } from "react-icons/bs";
+import { IoAddCircleOutline } from "react-icons/io5";
+import { FiMinusCircle } from "react-icons/fi";
+
 import ProcessCircle from "@/_components/ui/ProcessCircle"
+
 
 export default function Page() {
     const [passType, setPassType] = React.useState("password")
+    const [creditNum, setCreditNum] = React.useState(5)
     
 
     const toggle_passtype = () => {
@@ -193,6 +198,38 @@ export default function Page() {
 
                     </div>
                     
+                </div>
+
+                <div className="ml-2 bg-[#A7A7A7] p-[18px]">
+                    <div className="border border-2 border-[#734AE2] px-[18px] pt-[24px] pb-[40px] rounded-xl bg-[#fff]  select-none">
+                        <span className="block text-[36px] font-bold mb-[4px]">$10</span>
+                        <span className="block text-[15px] mb-[32px]">AI mock interview credits</span>
+
+                        <div className="flex justify-between items-center w-[160px] mb-[32px] mx-auto">
+                            <FiMinusCircle className="w-[24px] h-[24px] cursor-pointer" onClick={() => setCreditNum(creditNum-1)} />
+                            <span className="block w-[77px] h-[55px] border border-[#E8E8E8] text-[20px] flex items-center justify-center">{creditNum}</span>
+                            <IoAddCircleOutline className="w-[24px] h-[24px] cursor-pointer" onClick={() => setCreditNum(creditNum+1)} />
+                        </div>
+
+                        <ul className="mb-[32px] space-y-2 max-w-[310px] overflow-wrap">
+                            <li className="flex items-center">
+                                <RightIcon />
+                                <span className="ml-[12px]">Extra Credits will never expired</span>
+                            </li>
+                            <li className="flex items-center">
+                                <RightIcon />
+                                <span className="ml-[12px]">AI interview generation based on real JDs</span>
+                            </li>
+                            <li className="flex items-center">
+                                <RightIcon />
+                                <span className="ml-[12px]">Trustworthy interview feedback report</span>
+                            </li>
+                        </ul>
+
+                        <span className="inline-block text-[16px] bg-[#1F2937] px-[103px] py-[10px] rounded-3xl text-[#fff] cursor-pointer">
+                            Purchase Now
+                        </span>
+                    </div>
                 </div>
 
                 <div className="ml-2 bg-[#e2d5ea] px-3 py-3">

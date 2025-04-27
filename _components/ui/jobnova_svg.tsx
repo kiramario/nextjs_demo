@@ -179,3 +179,12 @@ export function CompanyInIcon() {
         </svg>
     );
 }
+
+export function RightIcon() {
+    return (
+        <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5.45382 11.7009L2.11288 8.25346L1 9.40179L5.45382 14L15 4.14956L13.8872 3L5.45382 11.7009Z" fill="#734AE2"/>
+        </svg>
+
+    )
+}
