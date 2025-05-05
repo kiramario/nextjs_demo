@@ -1,5 +1,6 @@
 import Auth from "../Auth"
 import SignInSuc from "../signInSuc"
+import Anonymous from "../Anonymous"
 
 export default async function Page({
     params,
@@ -12,6 +13,8 @@ export default async function Page({
         return <Auth />
     } else if (slug == "signInSuc") {
         return <SignInSuc />
+    } else if (slug == "anonymous") {
+        return <Anonymous />
     }
     
 }
