@@ -9,6 +9,7 @@ export default function RecordCamera() {
     React.useEffect(() => {
         setRecordLink("")
     }, [])
+    
     return (
         <>
             <h1 className="text-center text-xl font-bold">app/demo/mediaStream/RecordCamera page</h1>

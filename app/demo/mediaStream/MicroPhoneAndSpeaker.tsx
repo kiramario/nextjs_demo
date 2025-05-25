@@ -6,6 +6,7 @@ export default function MicroPhoneAndSpeaker() {
     const [devices, setDevices]: [devices: MediaDeviceInfo[], (_: MediaDeviceInfo[]) => void] = React.useState([] as MediaDeviceInfo[])
     const [mpId, setMpId] = React.useState("")
     const [recordState, setRecordState] = React.useState("idel")
+    const [hClass, setHClass] =  React.useState(true)
 
     const mediaRecorder: React.Ref<MediaRecorder | undefined> = React.useRef(undefined)
     const audiochunks: React.Ref<Blob[]> = React.useRef([] as Blob[])
@@ -39,6 +40,10 @@ export default function MicroPhoneAndSpeaker() {
     const mpInpOnchange = (e: React.FormEvent<HTMLInputElement>) => {
         const target = e.target as HTMLInputElement
         setMpId(target.value)
+    }
+
+    const refresh_audiochunks = async () => {
+        audiochunks.current = []
     }
 
     const start_click = async () => {
@@ -96,48 +101,93 @@ export default function MicroPhoneAndSpeaker() {
         mediaRecorder.current!.stop()
     }
 
-    const download_play = async () => {
+    const speech_rec = async () => {
+        const form_data = new FormData()
+        form_data.append("audio_file", new Blob(audiochunks.current!, { 'type' : 'audio/wav; codecs=MS_PCM' }))
 
+
+        const options = {
+            method: 'POST',
+            // headers:  {
+            //     "Content-Type": "multipart/form-data"
+            // },
+            // body: JSON.stringify({
+            //     "audio": "auido_name.wav"
+            // })
+            body: form_data
+        };
+
+        fetch(`/api/in2urheart/ai/stt`, options)
+            .then(response => response.json())
+            .then(response => {
+                console.log("[microPhoneAndSpeaker speech_rec] response: ", response)
+                // console.log(`${response.status_code}, ${response.status} , ${response.message}, ${response.data}`)
+            })
+            .catch(err => console.error("[microPhoneAndSpeaker speech_rec] error: ", err));
     }
 
     return (
         <div className="mt-20">
-            <p className="bg-gray-200 font-bold">video input</p>
-            <ul>
-                {filter_vdi().map((mdi, index) => {
-                    return (
-                        <li key={index}>device_id: {mdi.deviceId}; label: {mdi.label}</li>
-                    )
-                })}
-            </ul>
-
-            <p className="bg-gray-200 font-bold">audio input</p>
-            <ul>
-                {filter_adi().map((mdi, index) => {
-                    return (
-                        <li key={index}>device_id: {mdi.deviceId}; label: {mdi.label}</li>
-                    )
-                })}
-            </ul>
-
-            <p className="bg-gray-200 font-bold">audio output</p>
-            <ul>
-                {filter_ado().map((mdi, index) => {
-                    return (
-                        <li key={index}>device_id: {mdi.deviceId}; label: {mdi.label}</li>
-                    )
-                })}
-            </ul>
             
-            <p className="mt-20">
-                <input className="border border-1 border-gray-400 px-2 py-2" onChange={mpInpOnchange} type='text' value={mpId}/>
-                <span>{recordState}</span>
+            <div className="w-2/3">
+                <h2 onClick={() => setHClass(!hClass)}>
+                    <button type="button" className="flex items-center justify-between w-full p-5 font-medium rtl:text-right text-gray-500 border border-b-0 border-gray-200 rounded-t-xl focus:ring-4 focus:ring-gray-200 ">
+                        <span>Toggle device ids</span>
+                        <svg data-accordion-icon className="w-3 h-3 rotate-180 shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5 5 1 1 5"/>
+                        </svg>
+                    </button>
+                </h2>
+                <div className={ hClass ? "hidden": "block" } >
+                    <p className="bg-gray-200 font-bold">video input</p>
+                    <ul>
+                        {filter_vdi().map((mdi, index) => {
+                            return (
+                                <li key={index}>device_id: {mdi.deviceId}; label: {mdi.label}</li>
+                            )
+                        })}
+                    </ul>
 
+                    <p className="bg-gray-200 font-bold">audio input</p>
+                    <ul>
+                        {filter_adi().map((mdi, index) => {
+                            return (
+                                <li key={index}>device_id: {mdi.deviceId}; label: {mdi.label}</li>
+                            )
+                        })}
+                    </ul>
+
+                    <p className="bg-gray-200 font-bold">audio output</p>
+                    <ul>
+                        {filter_ado().map((mdi, index) => {
+                            return (
+                                <li key={index}>device_id: {mdi.deviceId}; label: {mdi.label}</li>
+                            )
+                        })}
+                    </ul>
+                </div>
+            </div>
+
+            
+
+            <form className="w-1/4 border-1 border-gray-300 p-5 relative my-5 ml-5">
                 <audio ref={audioeRef} className="ml-10 w-[400px] h-[50px] border border-1"></audio>
-            </p>
+                <span className="bg-blue-100 text-blue-800 text-[16px] font-medium me-2 px-4 py-0.5 rounded-lg absolute top-0 right-0">{recordState}</span>
+
+                <div className="grid gap-6 mb-6">
+                    <div>
+                        <label htmlFor="audio_devId" className="block mb-2 text-sm font-bold text-gray-900">audio deviceID</label>
+                        <input onChange={mpInpOnchange} type="text" id="audio_devId" value={mpId} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+                    </div>
+                </div>
+            </form>
+            
+            <button onClick = {refresh_audiochunks} className="cursor-pointer bg-teal-500 px-5 py-2">refresh audiochunks</button>
             <button onClick = {start_click} className="cursor-pointer bg-blue-200 px-5 py-2">start record audio</button>
             <button onClick = {start_play} className="cursor-pointer bg-blue-400 px-5 py-2">stop and play</button>
             <a href="#" ref={download_ref} className="cursor-pointer bg-blue-600 px-5 py-2 text-[#fff]" download="media_stream_audio.mp3">download audio</a>
+
+            <button onClick = {speech_rec} className="cursor-pointer bg-cyan-200 px-5 py-2">fastapi server SST</button>
         </div>
     )
 }

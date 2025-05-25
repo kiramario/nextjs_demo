@@ -121,8 +121,6 @@ export default function Anonymous() {
                 anonymouse_switch_to_standard
             </span>
         </div>
-        
-           
         </>
     )
 }
