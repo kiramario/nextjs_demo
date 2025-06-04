@@ -1,5 +1,5 @@
 import type { NextRequest, NextResponse } from 'next/server'
-import { stt } from "@/_components/in2urheart_api/Ai_Handler"
+import { stt, chat_message} from "@/_components/in2urheart_api/Ai_Handler"
 
 
 // 定义请求参数的类型
@@ -48,7 +48,10 @@ export async function POST(request: NextRequest, { params }: { params: Params })
         const stt_res = await stt(audio_blob)
 
         return Response.json(stt_res)
-        
+    } else if (full_slug == "ai/chat/messages") {
+        const data = await request.json()
+        const chat_res = await chat_message(data)
+        return chat_res
     } else {
         return Response.json({
             "msg": `POST success ${full_slug}`
