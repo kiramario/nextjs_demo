@@ -91,7 +91,7 @@ export default function RtcRecord() {
         return wavFile.buffer;
     }
 
-
+    
     const download_audio = async () => {
 
         var blob = recorder.current.getBlob();
@@ -101,6 +101,19 @@ export default function RtcRecord() {
         // const blob2 = new Blob([arrB]);
 
         var file = new File([blob], getFileName('webm'));
+
+        const url = window.URL.createObjectURL(file);
+        aRef.current!.href = url;
+        aRef.current!.download = file.name;
+        aRef.current!.click();
+    }
+
+    const download_wav_audio = async () => {
+        const buf = await recorder.current.getBlob().arrayBuffer();
+        const arrB = await arrayBufferToWav(buf, 44100, 1)
+        const blob = new Blob([arrB], { 'type' : 'audio/wav; codecs=MS_PCM' });
+
+        const file = new File([blob], getFileName('wav'));
 
         const url = window.URL.createObjectURL(file);
         aRef.current!.href = url;
@@ -189,6 +202,7 @@ export default function RtcRecord() {
                 <button onClick = {stop_recording} className="cursor-pointer bg-blue-200 px-5 py-2 text-[#fff] font-bold mt-1 rounded-xl">Stop Recording</button>
                 <button onClick = {release_micro} className="cursor-pointer bg-blue-400 px-5 py-2 text-[#fff] font-bold mt-1 rounded-xl">Release Microphone</button>
                 <button onClick = {download_audio} className="cursor-pointer bg-blue-600 px-5 py-2 text-[#fff] font-bold mt-1 rounded-xl">download audio</button>
+                <button onClick = {download_wav_audio} className="cursor-pointer bg-blue-300 px-5 py-2 text-[#fff] font-bold mt-1 rounded-xl">download audio</button>
                 <button onClick = {speech_rec} className="cursor-pointer bg-cyan-200 px-5 py-2 text-[#fff] font-bold mt-1 rounded-xl">fastapi server SST</button>
             </div>
 

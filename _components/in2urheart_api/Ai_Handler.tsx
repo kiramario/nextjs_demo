@@ -28,3 +28,80 @@ export async function stt(audio_blob: Blob) {
         })
         .catch(err => console.error(err));
 }
+
+export async function chat_message(data: any) {
+    const decoder = new TextDecoder('utf-8');
+
+    const char_id = data["char_id"];
+    const message = data["message"];
+
+    const data_str = JSON.stringify({
+        char_id: char_id,
+        msg: {
+            role: "user",
+            content: message
+        }
+    })
+
+    const options = {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json;charset=utf-8",
+            "Authorization": 'Bearer xxx'
+        },
+        body: data_str
+    };
+
+
+    // function iteratorToStream(iterator) {
+    //     return new ReadableStream({
+    //         async pull(controller) {
+    //             const { value, done } = await iterator.next()
+        
+    //             if (done) {
+    //                 controller.close()
+    //             } else {
+    //                 controller.enqueue(value)
+    //             }
+    //         },
+    //     })
+    // }
+
+
+    // const stream = iteratorToStream(iterator)
+ 
+    // return new Response(stream)
+    
+    
+    const fetch_res = await fetch(`${api_addr}/chat/${char_id}/messages`, options)
+        .then(response => response.body)
+        .then(body => {
+            // body 是ReadableStream
+
+            return body
+            /*
+            const reader = body?.getReader();
+
+            const process: any = ({ done, value }: {done: any, value: any}) => {
+                if (done) {
+                    console.log('Stream finished');
+                    return;
+                }
+                const text = decoder.decode(value);
+                console.log('Received data chunk', text);
+
+                return reader?.read().then(process);
+            }
+            
+            reader?.read().then(process);
+            */
+        })
+        .catch(err => {
+            console.error(err)
+            // return {"err msg": "faild response, check log"}
+            return null
+        });
+
+    return new Response(fetch_res) 
+}
+
