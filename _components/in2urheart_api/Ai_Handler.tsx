@@ -34,13 +34,17 @@ export async function chat_message(data: any) {
 
     const char_id = data["char_id"];
     const message = data["message"];
+    const extra_prompts = data["extra_prompts"];
+    console.log(extra_prompts)
+    throw new Error("a")
 
     const data_str = JSON.stringify({
         char_id: char_id,
         msg: {
             role: "user",
             content: message
-        }
+        },
+        extra_prompts: extra_prompts
     })
 
     const options = {

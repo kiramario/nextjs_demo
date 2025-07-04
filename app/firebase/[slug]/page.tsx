@@ -1,6 +1,7 @@
 import Auth from "../Auth"
 import SignInSuc from "../signInSuc"
 import Anonymous from "../Anonymous"
+import Supabase from "../Supabase_Auth"
 
 export default async function Page({
     params,
@@ -15,6 +16,8 @@ export default async function Page({
         return <SignInSuc />
     } else if (slug == "anonymous") {
         return <Anonymous />
+    } else if (slug == "supabase") {
+        return <Supabase />
     }
     
 }
