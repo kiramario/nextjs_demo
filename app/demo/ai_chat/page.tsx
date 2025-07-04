@@ -2,6 +2,11 @@
 import * as React from "react"
 import { sleep } from "@/_components/utils"
 
+/*
+    待使用的框架
+    https://github.com/frontend-collective/react-sortable-tree
+*/
+
 const ChatMsg = ({
   msg, role
 }: {msg: string, role: string}) => {
@@ -31,8 +36,8 @@ export default function Page() {
     const [hMsg, setHMsg] = React.useState([] as Array<Msg_Type>)
 
     const [uMsg, setUMsg] = React.useState("")
-    const [charId, setCharId] = React.useState("684a9bf96f3391b635eb38bf")
-    const [charName, setCharName] = React.useState("conversation_test2")
+    const [charId, setCharId] = React.useState("686247bebf0d81e91af6421e")
+    const [charName, setCharName] = React.useState("test2")
 
     // const chat_textarea: React.Ref<HTMLTextAreaElement> = React.useRef({} as HTMLTextAreaElement)
     // const chat_id_input: React.Ref<HTMLInputElement> = React.useRef({} as HTMLInputElement)
