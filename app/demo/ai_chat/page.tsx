@@ -3,6 +3,7 @@ import * as React from "react"
 import { sleep } from "@/_components/utils"
 import JsonView from 'react18-json-view';
 import 'react18-json-view/src/style.css';
+import { json } from "stream/consumers";
 
 /*
     待使用的框架
@@ -41,14 +42,26 @@ type Msg_Type = {
   content: string;
 };
 
+interface IDictionary {
+    rolecard: string
+    wcard1: string
+    wcard2: string
+    wcard3: string
+    ruleconstraint: string
+    thoughtchain: string
+}
 
 export default function Page() {
+    const p_order: Array<string> = ["rolecard", "wcard1", "wcard2", "wcard3", "ruleconstraint", "thoughtchain"]
 
     const [hMsg, setHMsg] = React.useState([] as Array<Msg_Type>)
     const [uMsg, setUMsg] = React.useState("")
 
+    const [dm, setDm] = React.useState("")
+
+
     // "rolecard", "wcard1", "wcard2", "wcard3", "ruleconstraint", "thoughtchain"
-    const [pHis, setPHis] = React.useState([] as Array<Msg_Type>)
+    const [pHis, setPHis] = React.useState({} as IDictionary)
 
     const [settingshow, setSettingshow] = React.useState(false)
     const [showprompt, setShowprompt] = React.useState(false)
@@ -78,13 +91,22 @@ export default function Page() {
             localStorage.removeItem("wcard3")
             localStorage.removeItem("ruleconstraint")
             localStorage.removeItem("thoughtchain")
-            setPHis([])
-            alert("删除完成")
+            setPHis({} as IDictionary)
         } else {
             alert("取消删除")
         }
-        
     }
+    const pop_last_chat = () => {
+        if (confirm("删除最后一条消息")) {
+            const without_last_hMsg: Array<Msg_Type> = hMsg.slice(0, -1)
+            setHMsg(without_last_hMsg)
+            save_storage("chat_list", JSON.stringify(without_last_hMsg))
+        } else {
+            alert("取消删除")
+        }
+    }
+
+    
 
     const handleMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setUMsg(event.target.value);
@@ -100,52 +122,30 @@ export default function Page() {
 
     // 提示词setting封装成extra_prompts的一部分
     // TODO: make it less if else
-    const setSetting = (index: number, value: string) => {
-        const chat_his = retrive_record_chat()
-        const new_pHis = []
-
-        const order = ["rolecard", "wcard1", "wcard2", "wcard3", "ruleconstraint", "thoughtchain"]
-
-        if (key == "rolecard") {
-            setRolecard(value)
-        }
-        if (key == "wcard1") {
-            setWcard1(value)
-        }
-        if (key == "wcard2") {
-            setWcard2(value)
-        }
-        if (key == "wcard3") {
-            setWcard3(value)
-        }
-        if (key == "ruleconstraint") {
-            setRuleconstraint(value)
-        }
-        if (key == "thoughtchain") {
-            setThoughtchain(value)
-        }
-        
-        if (rolecard) {
+    const convert_pHis_to_mst = () => {
+        const p_list: Array<Msg_Type> = []
+        for (var i = 0; i < p_order.length; i++) {
+            const key: string = p_order[i]
             
+            if(pHis && !!pHis[key as keyof IDictionary]){
+                const k_string = pHis[key as keyof IDictionary]!
+
+                const result = eval(Function("return " + k_string)())
+                // console.log(k_string, Array.isArray(result))
+                if (Array.isArray(result)) {
+                    (result as Array<Msg_Type>).forEach((value, index) => {
+                        p_list.push(value)
+                    })
+                } else {
+                    p_list.push(result)
+                }
+            }
         }
-        if (wcard1) {
-            new_pHis.push({"role": "system", "content": wcard1})
-        }
-        if (wcard2) {
-            new_pHis.push({"role": "system", "content": wcard2})
-        }
-        if (wcard3) {
-            new_pHis.push({"role": "system", "content": wcard3})
-        }
-        if (ruleconstraint) {
-            new_pHis.push({"role": "system", "content": ruleconstraint})
-        }
-        if (thoughtchain) {
-            new_pHis.push({"role": "system", "content": thoughtchain})
-        }
-        
-        setPHis([...new_pHis, ...chat_his])
+
+        const chat_his = retrive_record_chat()
+        return [...p_list, ...chat_his]
     }
+
 
     const sendUMsg = () => {
         if (charId.length == 0) {
@@ -158,20 +158,24 @@ export default function Page() {
             return 
         }
 
-        setHMsg([...hMsg, {"role": "user", "content": uMsg}])
-
+        setHMsg((prev) => {
+            const new_h_msg = [...prev, {"role": "user", "content": uMsg}]
+            save_storage("chat_list", JSON.stringify(new_h_msg))
+            return new_h_msg
+        })
+        
         // 记录下用户侧对话
         record_chat("user", uMsg)
 
         setUMsg("")
-
+        
         const options = {
             method: 'POST',
             headers: {},
             body: JSON.stringify({
                 "char_id": charId,
                 "message": uMsg,
-                "extra_prompts": pHis
+                "extra_prompts": convert_pHis_to_mst()
             })
         };
 
@@ -189,8 +193,11 @@ export default function Page() {
                         await sleep(500)
                         const text = decoder.decode(value).replace(/data: /g, "").trim();
 
+                        if (text.indexOf("event:") != -1 || text.indexOf("done") != -1) {
+                            return
+                        }
+
                         full_reply_text = full_reply_text + text
-                        
                         setHMsg((prevState) => {
                             console.log(`text = ${text}`)
                             // debugger
@@ -199,10 +206,13 @@ export default function Page() {
                             const last_replay: Msg_Type = prevState[prevState.length - 1]
         
                             if (last_replay.role == "user") {
-                                return [...prevState, {role: "ai", content: text}]
+                                const new_h_msg = [...prevState, {role: "assistant", content: text}]
+                                save_storage("chat_list", JSON.stringify(new_h_msg))
+                                return new_h_msg
                             } else {
-                                return [...without_last_hMsg, {role: "ai", content: last_replay.content + text}]
-
+                                const new_h_msg = [...without_last_hMsg, {role: "assistant", content: last_replay.content + text}]
+                                save_storage("chat_list", JSON.stringify(new_h_msg))
+                                return new_h_msg
                             }
                         });
 
@@ -256,7 +266,7 @@ export default function Page() {
         //         }
         //     };
         // }
-        return chat_his
+        return [...hMsg]
     }
 
     // const start_stream_1 = async () => {
@@ -279,30 +289,33 @@ export default function Page() {
     //         Object.assign(msgs, {"content": msgs.content + "\nfinish receive"})
     //         eventSource.close();
     //     });
-
     // }
 
 
     React.useEffect(() => {
-        setSettingToPHis()
-        if (get_storage("rolecard")) {
-            setRolecard(get_storage("rolecard")!)
+
+        const new_pHis: IDictionary = {} as IDictionary
+
+        if (!!get_storage("rolecard")) {
+            new_pHis.rolecard = get_storage("rolecard")!
         }
-        if (get_storage("wcard1")) {
-            setWcard1(get_storage("wcard1")!)
+        if (!!get_storage("wcard1")) {
+            new_pHis.wcard1 = get_storage("wcard1")!
         }
-        if (get_storage("wcard2")) {
-            setWcard2(get_storage("wcard2")!)
+        if (!!get_storage("wcard2")) {
+            new_pHis.wcard2 = get_storage("wcard2")!
         }
-        if (get_storage("wcard3")) {
-            setWcard3(get_storage("wcard3")!)
+        if (!!get_storage("wcard3")) {
+            new_pHis.wcard3 = get_storage("wcard3")!
         }
-        if (get_storage("ruleconstraint")) {
-            setRuleconstraint(get_storage("ruleconstraint")!)
+        if (!!get_storage("ruleconstraint")) {
+            new_pHis.ruleconstraint = get_storage("ruleconstraint")!
         }
-        if (get_storage("thoughtchain")) {
-            setThoughtchain(get_storage("thoughtchain")!)
+        if (!!get_storage("thoughtchain")) {
+            new_pHis.thoughtchain = get_storage("thoughtchain")!
         }
+
+        setPHis(new_pHis);
 
         // db_request.current = window.indexedDB.open("ai_home_love", 1);
 
@@ -321,8 +334,10 @@ export default function Page() {
         //             db.current.createObjectStore('chat_his', { autoIncrement: true });
         //         }
         //     }
-            
         // }
+        if (!!get_storage("chat_list")) {
+            setHMsg(JSON.parse(get_storage("chat_list")!))
+        }
     }, [])
 
     const chat_items = hMsg.map((msg, index) => {
@@ -331,15 +346,17 @@ export default function Page() {
 
     const prompt_items = () => {
 
+        const p_list: Array<Msg_Type> = convert_pHis_to_mst()
+
         return (<ul className="w-auto text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg">
             {
-                pHis.map((prompt, index) => {
+                p_list.map((prompt, index) => {
                     
                     return <li key={index} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
                         <JsonView
-                            src={{"prompt": prompt}}
+                            src={prompt}
                             theme="github"
-                            editable={true}
+                            editable={false}
                             highlightUpdates={true}/>
                     </li> 
                 })
@@ -348,11 +365,11 @@ export default function Page() {
     }
 
     const drawer_setting_class = settingshow 
-        ? "h-screen p-4 bg-slate-50 overflow-y-auto"
+        ? "h-screen p-4 bg-slate-50 overflow-y-auto max-w-[400px] min-w-[400px]"
         : "h-screen p-4  hidden"
     
     const drawer_prompt_class = showprompt 
-        ? "h-screen p-4 bg-slate-50 overflow-y-auto w-100"
+        ? "h-screen p-4 bg-slate-50 overflow-y-auto max-w-[400px] min-w-[400px]"
         : "h-screen p-4  hidden"
 
 
@@ -378,55 +395,65 @@ export default function Page() {
                         <div className="mb-6">
                             <label htmlFor="role_card" className="block mb-2 text-sm font-medium text-gray-900">角色卡</label>
                             <textarea id="role_card" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setRolecard(event.target.value); save_storage("rolecard", event.target.value)} } 
-                                value={rolecard}  rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write some"></textarea>
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, rolecard: event.target.value}); save_storage("rolecard", event.target.value)} } 
+                                value={ pHis.rolecard }  rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write some"></textarea>
                         </div>
                         <div className="mb-6">
                             <label htmlFor="wcard_1" className="block mb-2 text-sm font-medium text-gray-900">世界书1</label>
                             <textarea id-="wcard_1" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setWcard1(event.target.value); save_storage("wcard1", event.target.value)} } 
-                                value={wcard1} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, wcard1: event.target.value}); save_storage("wcard1", event.target.value)} } 
+                                value={pHis["wcard1"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
 
                         <div className="mb-6">
                             <label htmlFor="wcard_2" className="block mb-2 text-sm font-medium text-gray-900">世界书2</label>
                             <textarea id-="wcard_2" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setWcard2(event.target.value); save_storage("wcard2", event.target.value)} } 
-                                value={wcard2} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, wcard2: event.target.value}); save_storage("wcard2", event.target.value)} } 
+                                value={pHis["wcard2"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
 
                         </div>
                         <div className="mb-6">
                             <label htmlFor="wcard_3" className="block mb-2 text-sm font-medium text-gray-900">世界书3</label>
                             <textarea id-="wcard_3" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setWcard3(event.target.value); save_storage("wcard3", event.target.value)} } 
-                                value={wcard3} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, wcard3: event.target.value}); save_storage("wcard3", event.target.value)} } 
+                                value={pHis["wcard3"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
                         <div className="mb-6">
                             <label htmlFor="rule_constraint" className="block mb-2 text-sm font-medium text-gray-900">规则限制</label>
                             <textarea id="rule_constraint" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setRuleconstraint(event.target.value); save_storage("ruleconstraint", event.target.value)} } 
-                                value={ruleconstraint} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, ruleconstraint: event.target.value}); save_storage("ruleconstraint", event.target.value)} } 
+                                value={pHis["ruleconstraint"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
                         <div className="mb-6">
                             <label htmlFor="thought_chain" className="block mb-2 text-sm font-medium text-gray-900">思维链</label>
                             <textarea id="thought_chain" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setThoughtchain(event.target.value); save_storage("thoughtchain", event.target.value)} } 
-                                value={thoughtchain} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, thoughtchain: event.target.value}); save_storage("thoughtchain", event.target.value)} } 
+                                value={pHis["thoughtchain"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
                     </form>
                 </div>
 
                 <div className="grow flex justify-center flex-col px-10 py-10">
-                    <div className="">
-                        <button onClick={() => setSettingshow(true)} className="inline-block text-white bg-blue-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
-                            Show setting
-                        </button>
-                        <button onClick={() => setShowprompt(true)} className="inline-block text-white bg-blue-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
-                            Show send prompt
-                        </button>
-                        <button onClick={() => {clear_storage()}} className="inline-block text-white bg-red-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
-                            clear all setting
-                        </button>
+                    <div className="flex justify-between">
+                        <div>
+                            <button onClick={() => setSettingshow(true)} className="inline-block text-white bg-blue-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
+                                展示设置
+                            </button>
+                            <button onClick={() => setShowprompt(true)} className="inline-block text-white bg-blue-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
+                                展示发送提示词
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <button onClick={() => {clear_storage()}} className="inline-block text-white bg-red-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
+                                清除设置
+                            </button>
+                            <button onClick={() => {pop_last_chat()}} className="inline-block text-white bg-red-400 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
+                                删除最后一条记录
+                            </button>
+                        </div>
+
+                        
                     </div>
 
                     <div className="grow mt-10 h-[500px] overflow-y-auto bg-indigo-50 px-10 py-5">
