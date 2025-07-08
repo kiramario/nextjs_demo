@@ -10,7 +10,6 @@ import { json } from "stream/consumers";
     https://github.com/frontend-collective/react-sortable-tree
 */
 
-
 const get_storage = (key: string) => {
     return localStorage.getItem(key);
 }
@@ -18,6 +17,11 @@ const get_storage = (key: string) => {
 const save_storage = (key: string, value: string) => {
     localStorage.setItem(key, value);
 }
+
+/*
+    待使用的框架
+    https://github.com/frontend-collective/react-sortable-tree
+*/
 
 const ChatMsg = ({
   msg, role
@@ -51,17 +55,48 @@ interface IDictionary {
     thoughtchain: string
 }
 
+interface PayloadDictionary {
+    model: string
+    max_tokens: number
+    enable_thinking: boolean
+    thinking_budget: number
+    min_p: number
+    temperature: number
+    top_p: number
+    top_k: number
+    frequency_penalty: number
+    n: number
+    stop: Array<string>
+    stream: boolean
+    messages: Array<Msg_Type>
+}
+
 export default function Page() {
+    const default_paylaods: PayloadDictionary = {
+        "model": "deepseek-ai/DeepSeek-V3",
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "thinking_budget": 512,
+        "min_p": 0.05,
+        "temperature": 0.7,
+        "top_p": 0.7,
+        "top_k": 50,
+        "frequency_penalty": 0.5,
+        "n": 1,
+        "stop": [],
+        
+        "stream": true,
+        "messages": []
+    }
+
     const p_order: Array<string> = ["rolecard", "wcard1", "wcard2", "wcard3", "ruleconstraint", "thoughtchain"]
 
     const [hMsg, setHMsg] = React.useState([] as Array<Msg_Type>)
     const [uMsg, setUMsg] = React.useState("")
-
     const [dm, setDm] = React.useState("")
 
-
-    // "rolecard", "wcard1", "wcard2", "wcard3", "ruleconstraint", "thoughtchain"
     const [pHis, setPHis] = React.useState({} as IDictionary)
+    const [ploads, setPloads] = React.useState("")
 
     const [settingshow, setSettingshow] = React.useState(false)
     const [showprompt, setShowprompt] = React.useState(false)
@@ -91,6 +126,7 @@ export default function Page() {
             localStorage.removeItem("wcard3")
             localStorage.removeItem("ruleconstraint")
             localStorage.removeItem("thoughtchain")
+            localStorage.removeItem("ploads")
             setPHis({} as IDictionary)
         } else {
             alert("取消删除")
@@ -105,8 +141,6 @@ export default function Page() {
             alert("取消删除")
         }
     }
-
-    
 
     const handleMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setUMsg(event.target.value);
@@ -175,7 +209,8 @@ export default function Page() {
             body: JSON.stringify({
                 "char_id": charId,
                 "message": uMsg,
-                "extra_prompts": convert_pHis_to_mst()
+                "extra_prompts": convert_pHis_to_mst(),
+                "payloads": eval(Function("return " + ploads)())
             })
         };
 
@@ -189,9 +224,15 @@ export default function Page() {
                 let full_reply_text = ""
 
                 const process: any = async ({ done, value }: {done: any, value: any}) => {
+                   
                     if (!done) {
                         await sleep(500)
                         const text = decoder.decode(value).replace(/data: /g, "").trim();
+                        
+                        if (text.indexOf("Error occurred") != -1) {
+                            alert(text)
+                            return;
+                        }
 
                         if (text.indexOf("event:") != -1 || text.indexOf("done") != -1) {
                             return
@@ -240,7 +281,6 @@ export default function Page() {
         //     request.onerror = function (event) {
         //         alert(msg + "记录失败");
         //     };
-
         // }
     }
 
@@ -317,6 +357,10 @@ export default function Page() {
 
         setPHis(new_pHis);
 
+        if (!!get_storage("ploads")) {
+            setPloads(get_storage("ploads")!)
+        }
+
         // db_request.current = window.indexedDB.open("ai_home_love", 1);
 
         // db_request.current.onsuccess = function (event: any) {
@@ -346,21 +390,24 @@ export default function Page() {
 
     const prompt_items = () => {
 
+        let payloads = default_paylaods
+
+        if (!!ploads) {
+            payloads = eval(Function("return " + ploads)())
+        }
+        
         const p_list: Array<Msg_Type> = convert_pHis_to_mst()
+        payloads.messages = p_list
+        
 
         return (<ul className="w-auto text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg">
-            {
-                p_list.map((prompt, index) => {
-                    
-                    return <li key={index} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
-                        <JsonView
-                            src={prompt}
-                            theme="github"
-                            editable={false}
-                            highlightUpdates={true}/>
-                    </li> 
-                })
-            }
+            <li key={1} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
+                    <JsonView
+                        src={payloads}
+                        theme="github"
+                        editable={false}
+                        highlightUpdates={true}/>
+                </li> 
         </ul>)
     }
 
@@ -392,6 +439,13 @@ export default function Page() {
                     <input onChange={handleCharNamedChange} value={charName} type="text"  className="w-[200px] bg-green-100 border border-green-500 text-green-900  placeholder-green-700 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block p-2.5" placeholder="chat name" /> */}
                     
                     <form className="mb-6">
+                        <div className="mb-6">
+                            <label htmlFor="role_card" className="block mb-2 text-sm font-medium text-gray-900">设置</label>
+                            <textarea id="role_card" 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPloads(event.target.value); save_storage("ploads", event.target.value)} } 
+                                value={ ploads }  rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write some"></textarea>
+                        </div>
+
                         <div className="mb-6">
                             <label htmlFor="role_card" className="block mb-2 text-sm font-medium text-gray-900">角色卡</label>
                             <textarea id="role_card" 

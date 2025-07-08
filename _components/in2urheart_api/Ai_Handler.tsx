@@ -35,7 +35,8 @@ export async function chat_message(data: any) {
     const char_id = data["char_id"];
     const message = data["message"];
     const extra_prompts = data["extra_prompts"];
-    console.log(extra_prompts)
+    const payloads = data["payloads"];
+    // console.log(extra_prompts)
     // throw new Error("a")
 
     const data_str = JSON.stringify({
@@ -44,7 +45,9 @@ export async function chat_message(data: any) {
             role: "user",
             content: message
         },
-        extra_prompts: extra_prompts
+        is_stream: true,
+        extra_prompts: extra_prompts,
+        payloads: payloads
     })
 
     const options = {
@@ -75,7 +78,6 @@ export async function chat_message(data: any) {
     // const stream = iteratorToStream(iterator)
  
     // return new Response(stream)
-    
     
     const fetch_res = await fetch(`${api_addr}/chat/${char_id}/messages`, options)
         .then(response => response.body)
