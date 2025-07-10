@@ -224,10 +224,12 @@ export default function Page() {
                 let full_reply_text = ""
 
                 const process: any = async ({ done, value }: {done: any, value: any}) => {
-                   
+                    console.log("done: ", done)
                     if (!done) {
                         await sleep(500)
                         const text = decoder.decode(value).replace(/data: /g, "").trim();
+
+                        console.log("text: ", text)
                         
                         if (text.indexOf("Error occurred") != -1) {
                             alert(text)
