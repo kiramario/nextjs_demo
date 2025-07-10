@@ -73,21 +73,23 @@ interface PayloadDictionary {
 
 export default function Page() {
     const default_paylaods: PayloadDictionary = {
+        "messages": [],
         "model": "deepseek-ai/DeepSeek-V3",
+        "temperature": 0.7,
         "max_tokens": 512,
+        "stream": true,
+        "frequency_penalty": 0.5,
+        "top_p": 0.7,
+        "n": 1,
         "enable_thinking": false,
         "thinking_budget": 512,
         "min_p": 0.05,
-        "temperature": 0.7,
-        "top_p": 0.7,
         "top_k": 50,
-        "frequency_penalty": 0.5,
-        "n": 1,
         "stop": [],
-        
-        "stream": true,
-        "messages": []
     }
+
+    const pa_order = ["messages", "model", "temperature", "max_tokens", "stream", "frequency_penalty",
+        "top_p", "n", "enable_thinking",  "thinking_budget", "min_p", "top_k", "stop"]
 
     const p_order: Array<string> = ["rolecard", "wcard1", "wcard2", "wcard3", "ruleconstraint", "thoughtchain"]
 
@@ -164,7 +166,14 @@ export default function Page() {
             if(pHis && !!pHis[key as keyof IDictionary]){
                 const k_string = pHis[key as keyof IDictionary]!
 
-                const result = eval(Function("return " + k_string)())
+                let result = {}
+
+                try{
+                    result = eval(Function("return " + k_string)())
+                } catch (err) {
+                    result = {"errorss": err}
+                }
+
                 // console.log(k_string, Array.isArray(result))
                 if (Array.isArray(result)) {
                     (result as Array<Msg_Type>).forEach((value, index) => {
@@ -333,6 +342,52 @@ export default function Page() {
     //     });
     // }
 
+    const setDict= (key: string, value: string) => {
+        // TODO: eval  异常如何统一处理
+        let value_dict = {}
+        try {
+           value_dict = eval(Function("return " + value)())
+        } catch (err) {
+            alert(`set ${key} error: ${err}`)
+            return
+        }
+
+        if (key == "ploads") {
+            setPloads(value);
+            save_storage("ploads", value)
+        } else {
+            
+            if (key == "rolecard") {
+                setPHis({...pHis, "rolecard": value}); 
+                save_storage("rolecard", value)
+            }
+
+            if (key == "wcard1") {
+                setPHis({...pHis, "wcard1": value}); 
+                save_storage("wcard1", value)
+            }
+
+            if (key == "wcard2") {
+                setPHis({...pHis, "wcard2": value}); 
+                save_storage("wcard2", value)
+            }
+
+            if (key == "wcard3") {
+                setPHis({...pHis, "wcard3": value}); 
+                save_storage("wcard3", value)
+            }
+
+            if (key == "ruleconstraint") {
+                setPHis({...pHis, "ruleconstraint": value}); 
+                save_storage("ruleconstraint", value)
+            }
+
+            if (key == "thoughtchain") {
+                setPHis({...pHis, "thoughtchain": value}); 
+                save_storage("thoughtchain", value)
+            }                
+        }
+    }
 
     React.useEffect(() => {
 
@@ -391,21 +446,34 @@ export default function Page() {
     });
 
     const prompt_items = () => {
+        const payloads_show = {}
 
         let payloads = default_paylaods
 
         if (!!ploads) {
-            payloads = eval(Function("return " + ploads)())
+            try {
+                payloads = eval(Function("return " + ploads)())
+            } catch (err) {
+                console.error(err)
+                payloads = {"error": err}
+            }
         }
         
         const p_list: Array<Msg_Type> = convert_pHis_to_mst()
         payloads.messages = p_list
         
+        // TODO: ugly
+        pa_order.forEach((key_name, index) => {
+            payloads_show[key_name] = payloads[key_name]
+            if (key_name == "stream") {
+                payloads_show['stream'] = true
+            }
+        })
 
         return (<ul className="w-auto text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg">
             <li key={1} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
                     <JsonView
-                        src={payloads}
+                        src={payloads_show}
                         theme="github"
                         editable={false}
                         highlightUpdates={true}/>
@@ -444,46 +512,46 @@ export default function Page() {
                         <div className="mb-6">
                             <label htmlFor="role_card" className="block mb-2 text-sm font-medium text-gray-900">设置</label>
                             <textarea id="role_card" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPloads(event.target.value); save_storage("ploads", event.target.value)} } 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setDict("ploads", event.target.value);} } 
                                 value={ ploads }  rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write some"></textarea>
                         </div>
 
                         <div className="mb-6">
                             <label htmlFor="role_card" className="block mb-2 text-sm font-medium text-gray-900">角色卡</label>
                             <textarea id="role_card" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, rolecard: event.target.value}); save_storage("rolecard", event.target.value)} } 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setDict("rolecard", event.target.value)} } 
                                 value={ pHis.rolecard }  rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write some"></textarea>
                         </div>
                         <div className="mb-6">
                             <label htmlFor="wcard_1" className="block mb-2 text-sm font-medium text-gray-900">世界书1</label>
                             <textarea id-="wcard_1" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, wcard1: event.target.value}); save_storage("wcard1", event.target.value)} } 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setDict("wcard1", event.target.value)} } 
                                 value={pHis["wcard1"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
 
                         <div className="mb-6">
                             <label htmlFor="wcard_2" className="block mb-2 text-sm font-medium text-gray-900">世界书2</label>
                             <textarea id-="wcard_2" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, wcard2: event.target.value}); save_storage("wcard2", event.target.value)} } 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setDict("wcard2", event.target.value)} } 
                                 value={pHis["wcard2"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
 
                         </div>
                         <div className="mb-6">
                             <label htmlFor="wcard_3" className="block mb-2 text-sm font-medium text-gray-900">世界书3</label>
                             <textarea id-="wcard_3" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, wcard3: event.target.value}); save_storage("wcard3", event.target.value)} } 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setDict("wcard3", event.target.value)} } 
                                 value={pHis["wcard3"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
                         <div className="mb-6">
                             <label htmlFor="rule_constraint" className="block mb-2 text-sm font-medium text-gray-900">规则限制</label>
                             <textarea id="rule_constraint" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, ruleconstraint: event.target.value}); save_storage("ruleconstraint", event.target.value)} } 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setDict("ruleconstraint", event.target.value)} } 
                                 value={pHis["ruleconstraint"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
                         <div className="mb-6">
                             <label htmlFor="thought_chain" className="block mb-2 text-sm font-medium text-gray-900">思维链</label>
                             <textarea id="thought_chain" 
-                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setPHis({...pHis, thoughtchain: event.target.value}); save_storage("thoughtchain", event.target.value)} } 
+                                onChange={ (event: React.ChangeEvent<HTMLTextAreaElement>) => { setDict("thoughtchain", event.target.value)} } 
                                 value={pHis["thoughtchain"]} rows={5} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write something"></textarea>
                         </div>
                     </form>

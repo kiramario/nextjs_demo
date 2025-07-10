@@ -50,6 +50,8 @@ export async function chat_message(data: any) {
         payloads: payloads
     })
 
+    console.log("data_str: ", data_str)
+
     const options = {
         method: 'POST',
         headers: {
