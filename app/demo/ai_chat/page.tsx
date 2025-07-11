@@ -1,9 +1,13 @@
 "use client"
+import dynamic from 'next/dynamic'
 import * as React from "react"
 import { sleep } from "@/_components/utils"
 import JsonView from 'react18-json-view';
 import 'react18-json-view/src/style.css';
 import { json } from "stream/consumers";
+import { JsonEditor, JSONContent, createJSONEditor, JSONEditorPropsOptional, OnChange, TextContent} from 'vanilla-jsoneditor'
+import { errorToJSON } from 'next/dist/server/render';
+
 
 /*
     待使用的框架
@@ -69,9 +73,15 @@ interface PayloadDictionary {
     stop: Array<string>
     stream: boolean
     messages: Array<Msg_Type>
+    error?: string
 }
 
+interface Dict_str { [key: string]: any }
+
 export default function Page() {
+    // const JSONEditorReact = dynamic(() => import('../JSONEditorReact'), { ssr: false }) 阻止服务器渲染
+    // const TextContent = dynamic(() => import('../TextContent'), { ssr: false })
+
     const default_paylaods: PayloadDictionary = {
         "messages": [],
         "model": "deepseek-ai/DeepSeek-V3",
@@ -94,14 +104,22 @@ export default function Page() {
     const p_order: Array<string> = ["rolecard", "wcard1", "wcard2", "wcard3", "ruleconstraint", "thoughtchain"]
 
     const [hMsg, setHMsg] = React.useState([] as Array<Msg_Type>)
+
     const [uMsg, setUMsg] = React.useState("")
     const [dm, setDm] = React.useState("")
 
-    const [pHis, setPHis] = React.useState({} as IDictionary)
+    // TODO: pHis是不是也做成json字符串存在本地，目前是每个项目分别存
+    const [pHis, setPHis] = React.useState({} as IDictionary) 
     const [ploads, setPloads] = React.useState("")
+    const [hPloads, setHPloads] = React.useState([] as Array<PayloadDictionary>)
 
     const [settingshow, setSettingshow] = React.useState(false)
     const [showprompt, setShowprompt] = React.useState(false)
+    const [waitAi, setWaitAi] = React.useState(false)
+
+    const refContainer = React.useRef<HTMLDivElement>(null)
+    const refEditor = React.useRef<JsonEditor>(null)
+
     
     // const [rolecard, setRolecard] = React.useState("")
     // const [wcard1, setWcard1] = React.useState("")
@@ -180,7 +198,7 @@ export default function Page() {
                         p_list.push(value)
                     })
                 } else {
-                    p_list.push(result)
+                    p_list.push(result as Msg_Type)
                 }
             }
         }
@@ -188,7 +206,6 @@ export default function Page() {
         const chat_his = retrive_record_chat()
         return [...p_list, ...chat_his]
     }
-
 
     const sendUMsg = () => {
         if (charId.length == 0) {
@@ -211,7 +228,10 @@ export default function Page() {
         record_chat("user", uMsg)
 
         setUMsg("")
-        
+    }
+
+    const chat_with_msg = () => {
+        setWaitAi(true)
         const options = {
             method: 'POST',
             headers: {},
@@ -228,7 +248,7 @@ export default function Page() {
         fetch("/api/in2urheart/ai/chat/messages", options)
             .then(response => response.body)
             .then(body => {
-                
+                setWaitAi(false)
                 const reader = body?.getReader();
                 let full_reply_text = ""
 
@@ -236,10 +256,8 @@ export default function Page() {
                     console.log("done: ", done)
                     if (!done) {
                         await sleep(500)
-                        const text = decoder.decode(value).replace(/data: /g, "").trim();
-
+                        const text = decoder.decode(value).replace(/data: /g, "").replaceAll(/\n/g, "").trim();
                         console.log("text: ", text)
-                        
                         if (text.indexOf("Error occurred") != -1) {
                             alert(text)
                             return;
@@ -251,7 +269,6 @@ export default function Page() {
 
                         full_reply_text = full_reply_text + text
                         setHMsg((prevState) => {
-                            console.log(`text = ${text}`)
                             // debugger
 
                             const without_last_hMsg: Array<Msg_Type> = prevState.slice(0, -1)
@@ -271,13 +288,20 @@ export default function Page() {
                         reader?.read().then(process);
                     } else {
                         console.log('Stream finished');
+
                         // 记录下ai侧对话
-                        record_chat("assistant", full_reply_text)
+                        // record_chat("assistant", full_reply_text)
                         return;
                     }
                 }
                 
                 reader?.read().then(process);
+
+                console.log("full_reply_text: ", full_reply_text)
+
+                const new_hh = [...hPloads, calculate_cur_ploads()]
+                setHPloads(new_hh)
+                save_storage("history_ploads", JSON.stringify(new_hh))
             
             })
             .catch(err => console.error("[microPhoneAndSpeaker speech_rec] error: ", err));
@@ -356,7 +380,6 @@ export default function Page() {
             setPloads(value);
             save_storage("ploads", value)
         } else {
-            
             if (key == "rolecard") {
                 setPHis({...pHis, "rolecard": value}); 
                 save_storage("rolecard", value)
@@ -390,6 +413,13 @@ export default function Page() {
     }
 
     React.useEffect(() => {
+        refEditor.current = createJSONEditor({
+            target: refContainer.current!,
+            props: {
+                onChange: rerange_message
+            }
+        })
+        
 
         const new_pHis: IDictionary = {} as IDictionary
 
@@ -439,15 +469,38 @@ export default function Page() {
         if (!!get_storage("chat_list")) {
             setHMsg(JSON.parse(get_storage("chat_list")!))
         }
+        if (!!get_storage("history_ploads")) {
+            setHPloads(JSON.parse(get_storage("history_ploads")!))
+        }
+
     }, [])
+
+    React.useEffect(() => {
+        if (refEditor.current) {
+            const jc: JSONContent = {
+                json: hMsg
+            }
+            refEditor.current.updateProps({content: jc})
+        }
+
+    }, [hMsg])
 
     const chat_items = hMsg.map((msg, index) => {
         return <ChatMsg msg={msg.content} role={msg.role} key={index} />
     });
 
-    const prompt_items = () => {
-        const payloads_show = {}
+    const rerange_message = (cur: TextContent, prev: TextContent, status: any) => {
+        // console.log("cur: ", cur.text)
+        try{
+            const cur_json = JSON.parse(cur.text)
+            setHMsg(cur_json)
+        } catch (err) {
+            console.error("json text error: ", err)
+        }
+    }
 
+
+    const calculate_cur_ploads = () : PayloadDictionary => {
         let payloads = default_paylaods
 
         if (!!ploads) {
@@ -455,38 +508,76 @@ export default function Page() {
                 payloads = eval(Function("return " + ploads)())
             } catch (err) {
                 console.error(err)
-                payloads = {"error": err}
+                if (err instanceof Error) {
+                    payloads.error = err.message
+                }
             }
         }
         
         const p_list: Array<Msg_Type> = convert_pHis_to_mst()
         payloads.messages = p_list
-        
-        // TODO: ugly
-        pa_order.forEach((key_name, index) => {
-            payloads_show[key_name] = payloads[key_name]
-            if (key_name == "stream") {
-                payloads_show['stream'] = true
-            }
-        })
 
-        return (<ul className="w-auto text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg">
-            <li key={1} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
+        return payloads
+    }
+
+    const prompt_items = () => {
+        const payloads_to_show = (p: PayloadDictionary) : Dict_str => {
+            if (!!!p) {
+                return {}
+            }
+            const cur_payloads: Dict_str = p as Dict_str
+            const payloads_show: Dict_str = {}
+
+            // TODO: ugly
+            pa_order.forEach((key_name, index) => {
+                payloads_show[key_name] = cur_payloads[key_name]
+            })
+            return payloads_show
+        }
+        
+
+        const history_payloads_show = () => {
+            const return_items: React.JSX.Element[] = []
+            for(var i = hPloads.length - 1; i >= 0; i--) {
+                return_items.push(
+                    <li key={i + 1} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
+                        <span className="inline-flex items-center bg-yellow-600 text-[#fff] text-xs font-bold px-4 rounded-full">
+                            {i + 1}
+                        </span>
+                        <JsonView
+                            src={payloads_to_show(hPloads[i])}
+                            theme="github"
+                            editable={false}
+                            collapsed={true}
+                            
+                        />
+                    </li>
+                )
+            }
+            return return_items
+        } 
+
+        return (
+            <ul className="w-auto text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg">
+                <li key={0} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
                     <JsonView
-                        src={payloads_show}
+                        src={payloads_to_show(calculate_cur_ploads())}
                         theme="github"
                         editable={false}
-                        highlightUpdates={true}/>
-                </li> 
-        </ul>)
+                        // onEdit={edit_f}
+                    />
+                </li>
+                { history_payloads_show() }
+            </ul>
+        )
     }
 
     const drawer_setting_class = settingshow 
-        ? "h-screen p-4 bg-slate-50 overflow-y-auto max-w-[400px] min-w-[400px]"
+        ? "h-screen p-4 bg-slate-50 overflow-y-auto min-w-[400px] max-w-[400px] "
         : "h-screen p-4  hidden"
     
     const drawer_prompt_class = showprompt 
-        ? "h-screen p-4 bg-slate-50 overflow-y-auto max-w-[400px] min-w-[400px]"
+        ? "h-screen p-4 bg-slate-50 overflow-y-auto min-w-[400px] max-w-[400px] "
         : "h-screen p-4  hidden"
 
 
@@ -557,7 +648,7 @@ export default function Page() {
                     </form>
                 </div>
 
-                <div className="grow flex justify-center flex-col px-10 py-10">
+                <div className="flex justify-center flex-col px-10 py-10">
                     <div className="flex justify-between">
                         <div>
                             <button onClick={() => setSettingshow(true)} className="inline-block text-white bg-blue-300 hover:bg-blue-500 font-medium rounded-lg text-sm px-5 py-1 mb-2 mr-3 cursor-pointer" type="button">
@@ -576,23 +667,29 @@ export default function Page() {
                                 删除最后一条记录
                             </button>
                         </div>
-
-                        
                     </div>
-
+                    
                     <div className="grow mt-10 h-[500px] overflow-y-auto bg-indigo-50 px-10 py-5">
                         {chat_items}
+                        { waitAi&&
+                            <ChatMsg msg={"...wait"} role={"assistant"} key={-1} />
+                        }
                     </div>
 
-                    <div className="mt-10">
-                        <div>
-                            <label htmlFor="message" className="inline-block mb-2 text-sm font-medium text-gray-900 mr-5">Your message</label>
-                            <span onClick={sendUMsg} className="inline-block px-5 mb-5 bg-blue-200 hover:bg-blue-500  rounded-lg w-fit cursor-pointer">send</span>
+                    <div className="my-10">
+                        <div className='flex justify-between'>
+                            <span onClick={sendUMsg} className="inline-block px-5 mb-5 bg-blue-100 hover:bg-blue-200  rounded-lg w-fit cursor-pointer">pre send</span>
+                            <span onClick={chat_with_msg} className="inline-block px-5 mb-5 bg-amber-200 hover:bg-amber-500  rounded-lg w-fit cursor-pointer">send</span>
                         </div>
                         
                         <textarea onChange={handleMessageChange} value={uMsg} id="message" rows={4} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 " placeholder="Write your thoughts here..."></textarea>
                     </div>
                 </div>
+
+                <div ref={refContainer} className="min-w-[600px] max-w-[600px] overflow-y-auto bg-indigo-50 px-5 py-3 my-10">
+                </div>
+
+                
 
                 <div className={drawer_prompt_class}>
                     <h5 className="inline-flex items-center mb-6 text-base font-semibold text-gray-500 uppercase">
