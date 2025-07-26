@@ -19,7 +19,6 @@ export default function Supabase() {
         })
     }
 
-
     const email_signin = async () => {
         const sign_res = await supabase.auth.signInWithPassword({
             email: '645364525@qq.com',
@@ -42,6 +41,11 @@ export default function Supabase() {
         if (!!sign_res.error) {
             alert(sign_res.error.code)
         }
+    }
+
+    const get_user = async () => {
+        const user = await supabase.auth.getUser()
+        console.log(user)
     }
 
 
@@ -68,6 +72,12 @@ export default function Supabase() {
                 <span onClick={github_signin} className="cursor-pointer block  bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
                     github_signin
                 </span>
+
+                <span onClick={get_user} className="cursor-pointer block  bg-[#1F2937] text-[16px] px-[17px] py-[9px] rounded-3xl text-[#fff] mt-[15px]  mr-[10px] select-none">
+                    get_user
+                </span>
+
+                
             </div>
         </>
     )

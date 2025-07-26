@@ -682,7 +682,7 @@ export default function Page() {
                             <span onClick={chat_with_msg} className="inline-block px-5 mb-5 bg-amber-200 hover:bg-amber-500  rounded-lg w-fit cursor-pointer">send</span>
                         </div>
                         
-                        <textarea onChange={handleMessageChange} value={uMsg} id="message" rows={4} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 " placeholder="Write your thoughts here..."></textarea>
+                        <textarea onChange={handleMessageChange} value={uMsg} id="message" rows={4} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Write your thoughts here..."></textarea>
                     </div>
                 </div>
 

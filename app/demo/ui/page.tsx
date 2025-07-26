@@ -201,7 +201,7 @@ export default function Page() {
                 </div>
 
                 <div className="ml-2 bg-[#A7A7A7] p-[18px]">
-                    <div className="border border-2 border-[#734AE2] px-[18px] pt-[24px] pb-[40px] rounded-xl bg-[#fff]  select-none">
+                    <div className="border border-2 border-[#734AE2] px-[18px] pt-[24px] pb-[40px] rounded-xl bg-[#fff] select-none">
                         <span className="block text-[36px] font-bold mb-[4px]">$10</span>
                         <span className="block text-[15px] mb-[32px]">AI mock interview credits</span>
 
