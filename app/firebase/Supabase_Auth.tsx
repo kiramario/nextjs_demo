@@ -2,12 +2,40 @@
 
 import * as React from "react"
 import { createClient } from '@supabase/supabase-js'
+import { Auth } from '@supabase/auth-ui-react'
+import { ThemeSupa } from '@supabase/auth-ui-shared'
+
+const supabaseUrl = 'https://pvypfqfbpfroctakknoy.supabase.co'
+const supabaseKey: string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2eXBmcWZicGZyb2N0YWtrbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyODg2MjQsImV4cCI6MjA2Njg2NDYyNH0.ldhBEKNxmGgKEnGmjJ8KYZmYFiak6E5gFyegpNExhJo"
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+
+const Supabase_Demo_Auth = () => {
+    const [session, setSession] = React.useState(null)
+    React.useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session)
+        })
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session)
+        })
+
+        return () => subscription.unsubscribe()
+    }, [])
+
+    if (!session) {
+        return (<Auth supabaseClient={supabase} appearance={{ theme: ThemeSupa }} />)
+    } else {
+        return (<div>Logged in!</div>)
+    }
+}
 
 export default function Supabase() {
 
-    const supabaseUrl = 'https://pvypfqfbpfroctakknoy.supabase.co'
-    const supabaseKey: string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2eXBmcWZicGZyb2N0YWtrbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyODg2MjQsImV4cCI6MjA2Njg2NDYyNH0.ldhBEKNxmGgKEnGmjJ8KYZmYFiak6E5gFyegpNExhJo"
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    
 
     const email_signup = async () => {
         const { data, error } = await supabase.auth.signUp({
@@ -77,7 +105,7 @@ export default function Supabase() {
                     get_user
                 </span>
 
-                
+                <supabase_Demo_Auth />
             </div>
         </>
     )

@@ -29,5 +29,4 @@ export default async function Page({
     } else if (slug == "locDv") {
         return <Localdv />
     }
-    
 }
