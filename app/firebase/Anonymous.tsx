@@ -23,10 +23,10 @@ export default function Anonymous() {
         measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENTID
     };
 
+    // Initialize Firebase
+    app = initializeApp(firebaseConfig);
+    
     React.useEffect(() => {
-            
-        // Initialize Firebase
-        app = initializeApp(firebaseConfig);
         // const analytics = getAnalytics(app);
         auth.current = getAuth(app);
 
@@ -48,7 +48,7 @@ export default function Anonymous() {
         alert("anonymouse_register")
         current_usercredential.current = undefined
 
-        if (auth.current!!!) {
+        if (auth.current) {
             signInAnonymously(auth.current)
                 .then((userCredential: UserCredential) => {
                     console.log("set anonymouse_register")
@@ -61,7 +61,7 @@ export default function Anonymous() {
     }
 
     const show_current_user = async () => {
-        if (current_user.current!!!) {
+        if (current_user.current) {
             console.log(">>>>current_user.current not null<<<<")
             const user: User = current_user.current;
             
@@ -74,7 +74,7 @@ export default function Anonymous() {
             console.log("user: ", user)
         }
 
-        if (current_usercredential.current!!!) {
+        if (current_usercredential.current) {
             console.log(">>>>current_usercredential.current not null<<<<")
             console.log(current_usercredential.current)
         }
@@ -85,7 +85,7 @@ export default function Anonymous() {
         console.log("anonymouse_swtich_to_standard res: ")
         console.log(credential.toJSON()) // {email: 'anonymous@xxx1.com', password: 'abc@WWW123', signInMethod: 'password', tenantId: null}
 
-        if (auth.current!!!) {
+        if (auth.current) {
             linkWithCredential(auth.current.currentUser!, credential)
             .then((usercred: UserCredential) => {
                 const user = usercred.user;

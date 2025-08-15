@@ -1,12 +1,12 @@
 "use client"
-import dynamic from 'next/dynamic'
+// import dynamic from 'next/dynamic'
 import * as React from "react"
 import { sleep } from "@/_components/utils"
 import JsonView from 'react18-json-view';
 import 'react18-json-view/src/style.css';
-import { json } from "stream/consumers";
+// import { json } from "stream/consumers";
 import { JsonEditor, JSONContent, createJSONEditor, JSONEditorPropsOptional, OnChange, TextContent} from 'vanilla-jsoneditor'
-import { errorToJSON } from 'next/dist/server/render';
+// import { errorToJSON } from 'next/dist/server/render';
 
 
 /*
@@ -106,7 +106,7 @@ export default function Page() {
     const [hMsg, setHMsg] = React.useState([] as Array<Msg_Type>)
 
     const [uMsg, setUMsg] = React.useState("")
-    const [dm, setDm] = React.useState("")
+    // const [dm, setDm] = React.useState("")
 
     // TODO: pHis是不是也做成json字符串存在本地，目前是每个项目分别存
     const [pHis, setPHis] = React.useState({} as IDictionary) 
@@ -128,8 +128,8 @@ export default function Page() {
     // const [ruleconstraint, setRuleconstraint] = React.useState("")
     // const [thoughtchain, setThoughtchain] = React.useState("")
 
-    const [charId, setCharId] = React.useState("CHEAT_686a72eba29274d0d344152e")
-    const [charName, setCharName] = React.useState("cheat")
+    const [charId, _] = React.useState("CHEAT_686a72eba29274d0d344152e")
+    // const [charName, setCharName] = React.useState("cheat")
 
     // const db_request: React.Ref<IDBOpenDBRequest> = React.useRef({} as IDBOpenDBRequest)
     // const db: React.Ref<IDBDatabase> = React.useRef({} as IDBDatabase)
@@ -166,19 +166,19 @@ export default function Page() {
         setUMsg(event.target.value);
     };
 
-    const handleCharIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setCharId(event.target.value);
-    };
+    // const handleCharIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //     setCharId(event.target.value);
+    // };
 
-    const handleCharNamedChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setCharName(event.target.value);
-    };
+    // const handleCharNamedChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //     setCharName(event.target.value);
+    // };
 
     // 提示词setting封装成extra_prompts的一部分
     // TODO: make it less if else
     const convert_pHis_to_mst = () => {
         const p_list: Array<Msg_Type> = []
-        for (var i = 0; i < p_order.length; i++) {
+        for (let i = 0; i < p_order.length; i++) {
             const key: string = p_order[i]
             
             if(pHis && !!pHis[key as keyof IDictionary]){
@@ -317,10 +317,12 @@ export default function Page() {
         //         alert(msg + "记录失败");
         //     };
         // }
+        console.log(role)
+        console.log(msg)
     }
 
     const retrive_record_chat = () => {
-        const chat_his: Array<Msg_Type> = []
+        // const chat_his: Array<Msg_Type> = []
         // if (db !== null && db.current !== null) {
         //     const tsc: IDBTransaction = db.current.transaction('chat_his');
 
@@ -368,13 +370,13 @@ export default function Page() {
 
     const setDict= (key: string, value: string) => {
         // TODO: eval  异常如何统一处理
-        let value_dict = {}
-        try {
-           value_dict = eval(Function("return " + value)())
-        } catch (err) {
-            alert(`set ${key} error: ${err}`)
-            return
-        }
+        // let value_dict = {}
+        // try {
+        //    value_dict = eval(Function("return " + value)())
+        // } catch (err) {
+        //     alert(`set ${key} error: ${err}`)
+        //     return
+        // }
 
         if (key == "ploads") {
             setPloads(value);
@@ -538,7 +540,7 @@ export default function Page() {
 
         const history_payloads_show = () => {
             const return_items: React.JSX.Element[] = []
-            for(var i = hPloads.length - 1; i >= 0; i--) {
+            for(let i = hPloads.length - 1; i >= 0; i--) {
                 return_items.push(
                     <li key={i + 1} className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg">
                         <span className="inline-flex items-center bg-yellow-600 text-[#fff] text-xs font-bold px-4 rounded-full">

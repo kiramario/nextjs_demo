@@ -41,10 +41,10 @@ export default function AuthDemo() {
             "token_type": "Bearer"
         });
 
-        const raw2 = JSON.stringify({
-            name: "user_name",
-            age: 10
-        })
+        // const raw2 = JSON.stringify({
+        //     name: "user_name",
+        //     age: 10
+        // })
 
         const options = {
             method: 'POST',

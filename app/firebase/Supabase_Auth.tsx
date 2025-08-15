@@ -1,7 +1,7 @@
  "use client"
 
 import * as React from "react"
-import { createClient } from '@supabase/supabase-js'
+import { createClient, Session} from '@supabase/supabase-js'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 
@@ -11,16 +11,16 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 
 const Supabase_Demo_Auth = () => {
-    const [session, setSession] = React.useState(null)
+    const [session, setSession] = React.useState({} as Session)
     React.useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session)
+            session && setSession(session)
         })
 
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session)
+            session && setSession(session)
         })
 
         return () => subscription.unsubscribe()
@@ -45,6 +45,8 @@ export default function Supabase() {
                 emailRedirectTo: 'http://127.0.0.1:3001/demo/ai_chat',
             },
         })
+        console.log("[email_signup] data: ", data)
+        console.log("[email_signup] error: ", error)
     }
 
     const email_signin = async () => {
@@ -105,7 +107,7 @@ export default function Supabase() {
                     get_user
                 </span>
 
-                <supabase_Demo_Auth />
+                <Supabase_Demo_Auth />
             </div>
         </>
     )

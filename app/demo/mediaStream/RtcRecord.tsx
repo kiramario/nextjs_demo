@@ -2,15 +2,15 @@
 
 import * as React from "react"
 
+
 export default function RtcRecord() {
     // 等待 3 秒
     const sleep = (m: number) => new Promise(r => setTimeout(r, m));
 
     function getRandomString() {
         if (window.crypto && window.crypto.getRandomValues && navigator.userAgent.indexOf('Safari') === -1) {
-            var a = window.crypto.getRandomValues(new Uint32Array(3)),
-                token = '';
-            for (var i = 0, l = a.length; i < l; i++) {
+            const a = window.crypto.getRandomValues(new Uint32Array(3)), token = '';
+            for (let i = 0, l = a.length; i < l; i++) {
                 token += a[i].toString(36);
             }
             return token;
@@ -20,31 +20,33 @@ export default function RtcRecord() {
     }
 
     function getFileName(fileExtension: string) {
-        var d = new Date();
-        var year = d.getFullYear();
-        var month = d.getMonth();
-        var date = d.getDate();
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const date = d.getDate();
         return 'RecordRTC-' + year + month + date + '-' + getRandomString() + '.' + fileExtension;
     }
 
 
-    const [recordState, setRecordState] = React.useState("idel")
-    const audiochunks: React.Ref<Blob[]> = React.useRef([] as Blob[])
+    const [recordState, _] = React.useState("idel")
+    // const audiochunks: React.Ref<Blob[]> = React.useRef([] as Blob[])
     const audioeRef: React.Ref<HTMLAudioElement> = React.useRef({} as HTMLAudioElement)
     const aRef: React.Ref<HTMLAnchorElement> = React.useRef({} as HTMLAnchorElement)
-    const recorder: React.Ref<any> = React.useRef(undefined)
+    const recorder: React.Ref<Blob> = React.useRef({} as Blob)
 
-    const [loaded, setLoaded] = React.useState(false);
+    // const [loaded, setLoaded] = React.useState(false);
     // const ffmpegRef = React.useRef(new FFmpeg());
     const messageRef: React.Ref<HTMLDivElement> = React.useRef({} as HTMLDivElement);
 
 
-    let RecordRTC: any = undefined
+    let RecordRTC = undefined
+    import('recordrtc').then(rtc => {
+        RecordRTC = rtc
+    })
+
 
     React.useLayoutEffect(() => {
-        import('recordrtc').then(rtc => {
-            RecordRTC = rtc
-        })
+        
 
     }, [])
 
@@ -94,13 +96,13 @@ export default function RtcRecord() {
     
     const download_audio = async () => {
 
-        var blob = recorder.current.getBlob();
+        const blob = recorder.current.getBlob();
 
         // const buf = await blob.arrayBuffer();
         // const arrB = await arrayBufferToWav(buf, 44100, 1)
         // const blob2 = new Blob([arrB]);
 
-        var file = new File([blob], getFileName('webm'));
+        const file = new File([blob], getFileName('webm'));
 
         const url = window.URL.createObjectURL(file);
         aRef.current!.href = url;
@@ -146,11 +148,11 @@ export default function RtcRecord() {
         alert("start recording")
 
         // 获取用户媒体流 (麦克风)
-        let stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
+        const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
 
         // audioeRef.current!.srcObject = stream;
 
-        var options = {
+        const options = {
             type: 'audio',
             // mimeType: 'audio/wav',
             numberOfAudioChannels: 1,

@@ -247,11 +247,13 @@ export default function AuthDemo() {
                     console.log(result)
                     // This gives you a Google Access Token. You can use it to access the Google API.
                     const credential = GoogleAuthProvider.credentialFromResult(result);
-                    const token = credential.accessToken;
+                    const token = credential && Object.hasOwn(credential, "accessToken") && credential.accessToken;
                     // The signed-in user info.
                     const user = result.user;
                     // IdP data available using getAdditionalUserInfo(result)
                     // ...
+                    console.log("token: ", token)
+                    console.log("user: ", user)
             }).catch((error) => {
                 // Handle Errors here.
                 const errorCode = error.code;
@@ -261,6 +263,11 @@ export default function AuthDemo() {
                 // The AuthCredential type that was used.
                 const credential = GoogleAuthProvider.credentialFromError(error);
                 // ...
+
+                console.log("errorCode: ", errorCode)
+                console.log("errorMessage: ", errorMessage)
+                console.log("email: ", email)
+                console.log("credential: ", credential)
             });
         } else {
             alert("auth not exit")
@@ -275,29 +282,29 @@ export default function AuthDemo() {
             .then((result) => {
                 console.log(result)
                 if (result) {
-                    if (result.credential) {
+                    if (Object.hasOwn(result, "credential")) {
                         /** @type {firebase.auth.OAuthCredential} */
-                        var credential = result.credential;
+                        // var credential = result.credential;
     
-                        // This gives you a Google Access Token. You can use it to access the Google API.
-                        var token = credential.accessToken;
+                        // // This gives you a Google Access Token. You can use it to access the Google API.
+                        // var token = credential.accessToken;
                         // ...
                     }
 
                     // The signed-in user info.
-                    var user = result.user;
+                    // var user = result.user;
                     // IdP data available in result.additionalUserInfo.profile.
                         // ...
                 }
             }).catch((error) => {
                 console.log(error)
                 // Handle Errors here.
-                var errorCode = error.code;
-                var errorMessage = error.message;
-                // The email of the user's account used.
-                var email = error.email;
-                // The firebase.auth.AuthCredential type that was used.
-                var credential = error.credential;
+                // var errorCode = error.code;
+                // var errorMessage = error.message;
+                // // The email of the user's account used.
+                // var email = error.email;
+                // // The firebase.auth.AuthCredential type that was used.
+                // var credential = error.credential;
                 // ...
             });
             // [END auth_google_signin_redirect_result]
@@ -338,30 +345,34 @@ export default function AuthDemo() {
                 // ...
             })
             .catch((error) => {
-                const errorCode = error.code;
-                const errorMessage = error.message;
+                // const errorCode = error.code;
+                // const errorMessage = error.message;
                 // ...
             });
         }
         
     }
 
-    React.useEffect(() => {
-        
-        // Initialize Firebase
-        app = initializeApp(firebaseConfig);
-        // const analytics = getAnalytics(app);
-        auth.current = getAuth(app);
+    // Initialize Firebase
+    app = initializeApp(firebaseConfig);
+    
 
-        onAuthStateChanged(auth.current, (user) => {
-            if (user) {
-                const uid = user.uid;
-                alert(`user uid: ${uid}`)
-                console.log(user)
-            } else {
-                alert("user sign out")
-            }
-        });
+    React.useEffect(() => {
+        if (app) {
+            // const analytics = getAnalytics(app);
+            auth.current = getAuth(app);
+
+            onAuthStateChanged(auth.current, (user) => {
+                if (user) {
+                    const uid = user.uid;
+                    alert(`user uid: ${uid}`)
+                    console.log(user)
+                } else {
+                    alert("user sign out")
+                }
+            });
+        }
+        
 
         googleSignInRedirectResult()
 

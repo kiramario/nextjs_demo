@@ -1,14 +1,17 @@
+/* eslint-disable */
 "use client"
 import * as React from "react"
 
 
 // EXPERIMENT
-interface State_Value {}
+interface State_Value {
+    fake: number
+}
 
 
 interface State {
-    parent?: State
-    children?: Array<State>
+    parent?: State_Value
+    children?: Array<State_Value>
     id: string
     s_v: State_Value
 }
@@ -41,16 +44,15 @@ export enum ActionKind {
 }
 
 // An interface for our actions
-interface Action<T> {
-    type: ActionKind;
-    doF: (p_v: T) => T;
+interface Action {
+    type: string;
+    doF: (p_v: any) => any;
 }
 
-const countReducer: React.Reducer<The_State, Action<any>> = (state: The_State, action: Partial<Action<any>>) => {
-    const { type, doF } = action;
-    const realDoF = doF ?? ((v) => v)
+const countReducer: React.Reducer<The_State, Action> = (state: The_State, action: Partial<Action>) => {
+    const realDoF = action.doF ?? ((v) => v)
 
-    switch (type) {
+    switch (action.type) {
         case ActionKind.ACTION_1:
             return {
                 ...state,
@@ -73,7 +75,7 @@ const countReducer: React.Reducer<The_State, Action<any>> = (state: The_State, a
 //  Context
 export interface CountContextType {
     state: The_State;
-    dispatch: (action: Action<any>) => void;
+    dispatch: (action: Action) => void;
 }
 
 export const CountContext = React.createContext<CountContextType>({} as CountContextType);
@@ -185,7 +187,7 @@ export default function Page() {
                         </Father>
                     </Grand_Father>
                 </CountContext.Provider>
-                
+                FUCNK YOU 
             </div>
             
         </>

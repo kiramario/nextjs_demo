@@ -48,7 +48,9 @@ export default function Layout({
     return (
         <>
             <ShowAllLayout.Provider value={false}>
-                <Default_Layout children = {children}/>
+                <Default_Layout>
+                    {children}
+                </Default_Layout>
             </ShowAllLayout.Provider>
         </>
     )

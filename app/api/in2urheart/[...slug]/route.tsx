@@ -8,7 +8,7 @@ interface Params {
 }
 
 // 定义请求处理函数的类型
-export async function GET(request: NextRequest, { params }: { params: Params }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<Params> }) {
     const { slug } : { slug: string[] } = await params; // 获取动态参数
 
     const full_slug = slug.join("/")
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
 }
 
 // 定义请求处理函数的类型
-export async function POST(request: NextRequest, { params }: { params: Params }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<Params> }) {
     const { slug } : { slug: string[] } = await params; 
 
     const full_slug = slug.join("/")
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
             return Response.json({ error: 'Content-Type header is missing' }, { status: 400 });
         }
         
-        const data = await request.formData()
+        const data: FormData = await request.formData()
 
         // const stt_res = {
         //     "msg": "no content"
